@@ -29,3 +29,8 @@ CLAUDE.md
 frontend_spec.md
 backend_spec.md
 datahacksplan.md
+datahacksplan.json
+
+# tool state
+.codex
+.omc/
