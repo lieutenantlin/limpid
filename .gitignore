@@ -1,9 +1,30 @@
+# dependencies
 node_modules/
+
+# backend build output
 dist/
-.env
+
+# frontend build output
+.next/
+out/
+
+# environment variables
+.env*
+
+# logs
 *.log
+npm-debug.log*
+
+# uploads (local storage dev)
 uploads/
+
+# misc
 .DS_Store
+*.pem
+*.tsbuildinfo
+next-env.d.ts
+
+# project docs (not for source control)
 CLAUDE.md
 frontend_spec.md
 backend_spec.md
