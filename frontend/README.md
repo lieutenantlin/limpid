@@ -1,139 +1,173 @@
 # limpid Frontend
 
-Next.js dashboard for the limpid microplastics monitoring platform.
+Next.js frontend for the limpid microplastics monitoring platform.
+
+Like the backend, the frontend now supports two runtime configurations:
+
+- `local auth mode`: browser talks to the local Fastify API and uses local JWT login
+- `cognito auth mode`: browser talks to the deployed AWS API and uses Cognito Hosted UI + PKCE
 
 ## Technology Stack
 
-| Component | Technology | Version |
-|-----------|------------|---------|
-| Framework | Next.js | 16 (App Router) |
-| UI Library | React | 19 |
-| Language | TypeScript | 5.x |
-| Styling | Tailwind CSS | 4.x |
-| Components | shadcn/Base UI | - |
-| State | TanStack Query | 5.x |
-| Forms | React Hook Form + Zod | - |
-| Charts | Recharts | - |
-| Maps | Leaflet + React Leaflet | - |
-| Icons | Lucide React | - |
+| Area | Technology |
+| --- | --- |
+| Framework | Next.js 16 App Router |
+| UI | React 19 |
+| Language | TypeScript |
+| Styling | Tailwind CSS 4 |
+| Data fetching | TanStack Query |
+| Forms | React Hook Form + Zod |
+| Charts | Recharts |
+| Maps | Leaflet + React Leaflet |
 
 ## Project Structure
 
-```
+```text
 frontend/
 ├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── layout.tsx          # Root layout, metadata, providers
-│   │   ├── page.tsx            # Landing page
-│   │   ├── login/
-│   │   │   ├── page.tsx        # Login page wrapper
-│   │   │   └── login-page-client.tsx  # Login form component
-│   │   └── (app)/              # Protected route group
-│   │       ├── layout.tsx      # App shell layout
-│   │       ├── dashboard/
-│   │       │   └── page.tsx    # Dashboard with KPIs & charts
-│   │       ├── map/
-│   │       │   └── page.tsx    # Interactive map view
-│   │       ├── samples/
-│   │       │   ├── page.tsx    # Sample list with filters
-│   │       │   └── [id]/
-│   │       │       └── page.tsx  # Sample detail view
-│   │       ├── devices/
-│   │       │   ├── page.tsx    # Device list
-│   │       │   └── [id]/
-│   │       │       └── page.tsx  # Device detail view
-│   │       └── admin/
-│   │           └── page.tsx   # Admin panel (admin only)
+│   ├── app/
+│   │   ├── layout.tsx              # Root layout and providers
+│   │   ├── page.tsx                # Public landing page
+│   │   ├── auth/callback/          # Cognito redirect completion
+│   │   ├── login/                  # Login screen and hosted-login trigger
+│   │   └── (app)/                  # Protected application routes
 │   ├── components/
-│   │   ├── ui/                 # shadcn/Base UI components
-│   │   ├── auth/
-│   │   │   ├── auth-provider.tsx   # Session management
-│   │   │   └── auth-guard.tsx     # Route protection
-│   │   ├── app-shell.tsx      # Sidebar, topbar, navigation
-│   │   └── ...                 # Page-specific components
+│   │   ├── auth/                   # Auth provider and route guard
+│   │   ├── ui/                     # Shared UI primitives
+│   │   └── app-shell.tsx           # Navigation chrome
 │   └── lib/
-│       ├── api.ts             # API client with fallback logic
-│       ├── auth.ts            # Token storage helpers
-│       ├── types.ts           # TypeScript definitions
-│       └── utils.ts           # Formatting utilities
+│       ├── api.ts                  # Browser API client
+│       ├── auth.ts                 # Local vs Cognito auth helpers
+│       ├── types.ts                # Shared frontend types
+│       └── utils.ts
 ├── Dockerfile
 └── package.json
 ```
 
-## Route Structure
+## Route Surface
 
-| Route | Auth | Description |
-|-------|------|-------------|
-| `/` | None | Public landing page; redirects to `/dashboard` when a token already exists |
-| `/login` | None | Login form |
-| `/dashboard` | Bearer | Overview with KPIs & trends |
-| `/map` | Bearer | Interactive map with markers |
-| `/samples` | Bearer | Paginated sample list |
-| `/samples/:id` | Bearer | Sample detail view |
-| `/devices` | Bearer | Device list |
-| `/devices/:id` | Bearer | Device detail view |
-| `/admin` | Admin | User management & audit log |
+| Route | Auth | Notes |
+| --- | --- | --- |
+| `/` | none | Public landing page |
+| `/login` | none | Local login form or Cognito start screen |
+| `/auth/callback` | none | Cognito code exchange completion |
+| `/dashboard` | bearer | Overview and KPIs |
+| `/samples` | bearer | Sample list |
+| `/samples/[id]` | bearer | Sample detail |
+| `/devices` | bearer | Device list |
+| `/devices/[id]` | bearer | Device detail |
+| `/map` | bearer | Map view |
+| `/admin` | admin | User/admin tools |
 
-## Data and auth model
+## Auth Modes
 
-The frontend is primarily a client-rendered app:
+### Local auth mode
 
-- it stores the JWT in `localStorage`
-- all API calls are made from the browser
-- authenticated routes depend on `AuthProvider` and `AuthGuard`
-- TanStack Query caches user and data queries in memory
+Used when:
 
-The public entry flow is:
+- `NEXT_PUBLIC_AUTH_MODE=local`
+- the backend is the local Fastify API
+- the login form submits email/password to `POST /auth/login`
 
-1. anonymous visitors open `/` and see the landing page
-2. landing page CTAs route to `/login`
-3. returning users with a stored token are redirected from `/` to `/dashboard`
+Behavior:
 
-The login flow is:
+- token is stored in browser storage
+- `AuthProvider` seeds the current user in React Query
+- protected routes rely on the stored local bearer token
 
-1. submit credentials from `login-page-client.tsx`
-2. call `POST /auth/login`
-3. store the returned token in local storage
-4. seed the current user into the React Query cache
-5. redirect to `/dashboard`
+### Cognito auth mode
 
-## Styling and UI
+Used when:
 
-Styling is centered around [`src/app/globals.css`](src/app/globals.css):
+- `NEXT_PUBLIC_AUTH_MODE=cognito`
+- `NEXT_PUBLIC_API_BASE_URL` points to the deployed API Gateway URL
+- `NEXT_PUBLIC_COGNITO_*` values are set
 
-- Tailwind CSS 4 with CSS variables and custom tokens
-- a custom limpid visual theme using OKLCH color tokens
-- shadcn's generated utility and primitive component setup
-- glassy panel surfaces through the shared `.surface` utility
+Behavior:
 
-UI building blocks live in `src/components/ui/`. The app also uses:
+- `/login` shows the Cognito hosted sign-in CTA instead of the local email/password form
+- the app generates a PKCE verifier/challenge
+- the browser is redirected to Cognito Hosted UI
+- Cognito redirects back to `/auth/callback`
+- the frontend exchanges the auth code for tokens and stores them in browser storage
 
-- Recharts for KPI and trend visualizations
-- React Leaflet for sample mapping
-- responsive sheet navigation for mobile
+Important implementation files:
 
-## API integration
+- [`src/lib/auth.ts`](./src/lib/auth.ts)
+- [`src/app/auth/callback/page.tsx`](./src/app/auth/callback/page.tsx)
+- [`src/app/login/login-page-client.tsx`](./src/app/login/login-page-client.tsx)
+- [`src/components/auth/auth-provider.tsx`](./src/components/auth/auth-provider.tsx)
 
-The frontend assumes the backend is available at:
+## API Integration
 
-- `NEXT_PUBLIC_API_BASE_URL`, if set
-- otherwise `http://localhost:3001`
+The browser API client lives in [`src/lib/api.ts`](./src/lib/api.ts).
 
-The API wrapper:
+It:
 
-- attaches `Authorization` automatically when a token exists
-- clears the stored token on `401`
-- throws typed request errors
+- reads `NEXT_PUBLIC_API_BASE_URL`
+- attaches `Authorization: Bearer ...` when a token exists
+- clears local session state on `401`
+- calls the live REST surface directly from the browser
 
-There are also deliberate fallback paths in `src/lib/api.ts`:
+Current AWS-aligned endpoints used by the frontend include:
 
-- `getSampleStats()` derives dashboard metrics from sample and device lists if a dedicated stats endpoint is unavailable
-- `getSampleMarkers()` falls back to sample list data if a map endpoint is unavailable
-- `getDeviceSamples()` and `getAdminOverview()` similarly degrade gracefully
+- `GET /auth/me`
+- `GET /samples`
+- `GET /samples/stats`
+- `GET /samples/map`
+- `GET /devices`
+- `GET /devices/:id`
+- `GET /devices/:id/samples`
+- `GET /admin/users`
+- `GET /admin/audit-log`
+- `GET /admin/overview`
+- `POST /uploads/presign`
 
-This is useful in development, but it also means some frontend behavior is compensating for incomplete backend route parity.
+Fallback behavior still exists for a few routes:
 
-## Local development
+- `getSampleStats()` can derive metrics from sample/device data
+- `getSampleMarkers()` can fall back to sample list data
+- `getDeviceSamples()` can fall back to filtered samples
+- `getAdminOverview()` can derive summary counts from users and audit logs
+
+That behavior is deliberate and keeps the frontend resilient while the API remains MVP-shaped.
+
+## Environment Variables
+
+Use [`.env.example`](./.env.example) as the template.
+
+### Local auth mode example
+
+```env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+NEXT_PUBLIC_AUTH_MODE=local
+```
+
+### Cognito auth mode example
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://YOUR_HTTP_API_ID.execute-api.YOUR_REGION.amazonaws.com
+NEXT_PUBLIC_AUTH_MODE=cognito
+NEXT_PUBLIC_COGNITO_DOMAIN=https://YOUR_DOMAIN.auth.YOUR_REGION.amazoncognito.com
+NEXT_PUBLIC_COGNITO_CLIENT_ID=YOUR_COGNITO_APP_CLIENT_ID
+NEXT_PUBLIC_COGNITO_REDIRECT_URI=http://localhost:3000/auth/callback
+NEXT_PUBLIC_COGNITO_LOGOUT_URI=http://localhost:3000/login
+NEXT_PUBLIC_COGNITO_SCOPE=openid email profile
+```
+
+Important Cognito note:
+
+- The app client must have a managed login branding assigned, or Cognito can return `Login pages unavailable`.
+- In the current AWS migration flow, the default managed-login style can be created with:
+
+```bash
+aws cognito-idp create-managed-login-branding \
+  --user-pool-id YOUR_USER_POOL_ID \
+  --client-id YOUR_CLIENT_ID \
+  --use-cognito-provided-values
+```
+
+## Local Development
 
 ```bash
 npm install
@@ -141,29 +175,55 @@ npm run dev
 ```
 
 By default the app runs on `http://localhost:3000`.
-Use `http://localhost:3000/` for the public landing page and `http://localhost:3000/login` to test authentication directly.
 
-To point at a non-default backend, set:
+Useful routes:
 
-```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
-```
+- `http://localhost:3000/`
+- `http://localhost:3000/login`
+- `http://localhost:3000/dashboard`
 
-## Important dependencies
+Before testing Cognito locally, make sure the Cognito app client callback and logout URLs include:
 
-| Package | Role |
-| --- | --- |
-| `next` | application runtime and routing |
-| `@tanstack/react-query` | client-side server state |
-| `react-hook-form` + `@hookform/resolvers` | forms |
-| `zod` | validation |
-| `recharts` | charts |
-| `leaflet` + `react-leaflet` | maps |
-| `@base-ui/react` | lower-level UI primitives |
-| `shadcn` | generated component workflow |
+- `http://localhost:3000/auth/callback`
+- `http://localhost:3000/login`
 
-## Gaps worth knowing
+## Docker
 
-- There are no frontend tests configured yet.
-- The app depends on browser storage for auth, so it is not using SSR-auth patterns.
-- A few backend route names and response shapes are still in flux, which is why the API client includes fallbacks.
+[`Dockerfile`](./Dockerfile) now supports both local and Cognito-oriented public environment values at build time.
+
+Build args supported by the frontend image:
+
+- `NEXT_PUBLIC_API_BASE_URL`
+- `NEXT_PUBLIC_AUTH_MODE`
+- `NEXT_PUBLIC_COGNITO_DOMAIN`
+- `NEXT_PUBLIC_COGNITO_CLIENT_ID`
+- `NEXT_PUBLIC_COGNITO_REDIRECT_URI`
+- `NEXT_PUBLIC_COGNITO_LOGOUT_URI`
+- `NEXT_PUBLIC_COGNITO_SCOPE`
+
+The repo-level [`docker-compose.yml`](../docker-compose.yml) still represents the local stack by default:
+
+- frontend on `localhost:3000`
+- local Fastify API on `localhost:3001`
+- Postgres on `localhost:5432`
+
+You can override the compose frontend environment if you want the containerized frontend to point at the deployed AWS API and Cognito, but compose still starts the local API and database unless you deliberately change the workflow.
+
+## Validation
+
+Useful checks for the AWS-backed frontend:
+
+1. Open `/login`
+2. Click `Continue to Cognito`
+3. Complete hosted sign-in
+4. Confirm redirect to `/dashboard`
+5. Confirm `/auth/me` succeeds with the stored access token
+6. Confirm `/devices` and `/samples` load
+7. Confirm `POST /uploads/presign` returns an upload URL and object key
+
+## Known Gaps
+
+- No dedicated frontend tests are configured yet.
+- Auth is browser-storage based, not SSR-session based.
+- A few API routes still rely on fallback behavior in `src/lib/api.ts`.
+- Running the newest Next.js version on AWS-native frontend hosting may require extra platform compatibility checks, which is why the current migration validates Cognito + API with the frontend running locally first.

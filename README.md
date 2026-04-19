@@ -206,7 +206,9 @@ Visit:
 
 ## Local Docker Workflow
 
-The provided [`docker-compose.yml`](./docker-compose.yml) starts:
+The provided [`docker-compose.yml`](./docker-compose.yml) is intentionally the local development stack, not a local emulation of the AWS Lambda/API Gateway deployment.
+
+It starts:
 
 - `db`: Postgres 16
 - `api`: the Fastify backend on `http://localhost:3001`
@@ -231,6 +233,18 @@ docker compose down
 ```
 
 Important detail: the browser-facing frontend must use a host-reachable API URL. In this compose setup, `NEXT_PUBLIC_API_BASE_URL` is intentionally `http://localhost:3001`, not `http://api:3001`.
+
+The frontend image now accepts the full public AWS auth configuration as build args and runtime env values. That means you can still build the frontend container in Cognito mode when needed, for example:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://YOUR_HTTP_API_ID.execute-api.YOUR_REGION.amazonaws.com \
+NEXT_PUBLIC_AUTH_MODE=cognito \
+NEXT_PUBLIC_COGNITO_DOMAIN=https://YOUR_DOMAIN.auth.YOUR_REGION.amazoncognito.com \
+NEXT_PUBLIC_COGNITO_CLIENT_ID=YOUR_COGNITO_APP_CLIENT_ID \
+docker compose up --build frontend
+```
+
+Important limitation: compose will still start the local `api` and `db` services unless you choose a frontend-only workflow. The AWS backend itself is deployed with SAM, not with compose.
 
 ## AWS Deployment Summary
 
@@ -286,6 +300,8 @@ NEXT_PUBLIC_COGNITO_SCOPE=openid email profile
 
 For production, replace the localhost callback and logout URLs with your deployed frontend domain.
 
+Important Cognito note: if the hosted login page returns `Login pages unavailable`, the app client likely needs a managed login branding assignment. See [`AWS_MIGRATION_GUIDE.md`](./AWS_MIGRATION_GUIDE.md) for the `create-managed-login-branding --use-cognito-provided-values` fix.
+
 ### 4. Configure backend runtime values for AWS
 
 The SAM template sets these automatically for Lambda:
@@ -310,6 +326,7 @@ Key runtime switches in [`backend/.env.example`](./backend/.env.example):
 - `STORAGE_PROVIDER`: `local` or `s3`
 - `DATABASE_URL`: required for local Prisma/Postgres mode
 - `AWS_S3_BUCKET`, `AWS_REGION`
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`
 - `AWS_DDB_SAMPLES_TABLE`, `AWS_DDB_DEVICES_TABLE`, `AWS_DDB_USER_PROFILES_TABLE`, `AWS_DDB_AUDIT_LOGS_TABLE`
 - `AWS_COGNITO_USER_POOL_ID`, `AWS_COGNITO_USER_POOL_CLIENT_ID`, `AWS_COGNITO_GROUPS_CLAIM`
 
