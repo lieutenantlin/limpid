@@ -1,0 +1,3 @@
+# Exclude large data files from Lambda package
+**/data/**
+**/CUGN_along.nc
