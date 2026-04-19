@@ -3,7 +3,7 @@
 Microplastics monitoring platform built for DataHacks 2026. The repository contains:
 
 - `backend/`: a Fastify API backed by PostgreSQL via Prisma
-- `frontend/`: a Next.js dashboard for researchers and admins (built)
+- `frontend/`: a Next.js app with a public landing page plus authenticated researcher/admin dashboards
 
 The product theme in the codebase is "Aqua Graph": devices ingest sample measurements, the API stores them, and the frontend visualizes them in dashboards, tables, and a map.
 
@@ -96,11 +96,12 @@ The product theme in the codebase is "Aqua Graph": devices ingest sample measure
 
 ### Frontend flow
 
-1. Users authenticate against `POST /auth/login`.
-2. The JWT is stored in browser local storage.
-3. TanStack Query fetches API data from the client and caches responses.
-4. Protected pages under `src/app/(app)` are wrapped in an auth guard and shared app shell.
-5. Dashboard, sample, device, map, and admin screens are rendered from API data.
+1. Unauthenticated visitors land on `/`, which serves the public landing page.
+2. If a JWT is already stored in browser local storage, the landing page redirects the user to `/dashboard`.
+3. Users authenticate against `POST /auth/login`.
+4. TanStack Query fetches API data from the client and caches responses.
+5. Protected pages under `src/app/(app)` are wrapped in an auth guard and shared app shell.
+6. Dashboard, sample, device, map, and admin screens are rendered from API data.
 
 ## Repository Layout
 
@@ -152,6 +153,7 @@ The product theme in the codebase is "Aqua Graph": devices ingest sample measure
 │   ├── Dockerfile
 │   └── package.json
 ├── docker-compose.yml        # Full stack orchestration
+├── landing.html             # Static landing page reference/mockup
 ├── README.md                # This file
 ├── backend_spec.md          # Backend requirements
 ├── frontend_spec.md         # Frontend requirements
@@ -192,6 +194,7 @@ npm run dev
 ```
 
 The frontend runs on `http://localhost:3000` by default and targets `http://localhost:3001` unless `NEXT_PUBLIC_API_BASE_URL` is set.
+Visit `http://localhost:3000/` for the public landing page, `http://localhost:3000/login` for the auth flow, and `http://localhost:3000/dashboard` after sign-in.
 
 ## Docker workflow
 

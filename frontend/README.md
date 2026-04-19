@@ -64,7 +64,7 @@ frontend/
 
 | Route | Auth | Description |
 |-------|------|-------------|
-| `/` | None | Landing page |
+| `/` | None | Public landing page; redirects to `/dashboard` when a token already exists |
 | `/login` | None | Login form |
 | `/dashboard` | Bearer | Overview with KPIs & trends |
 | `/map` | Bearer | Interactive map with markers |
@@ -82,6 +82,12 @@ The frontend is primarily a client-rendered app:
 - all API calls are made from the browser
 - authenticated routes depend on `AuthProvider` and `AuthGuard`
 - TanStack Query caches user and data queries in memory
+
+The public entry flow is:
+
+1. anonymous visitors open `/` and see the landing page
+2. landing page CTAs route to `/login`
+3. returning users with a stored token are redirected from `/` to `/dashboard`
 
 The login flow is:
 
@@ -135,6 +141,7 @@ npm run dev
 ```
 
 By default the app runs on `http://localhost:3000`.
+Use `http://localhost:3000/` for the public landing page and `http://localhost:3000/login` to test authentication directly.
 
 To point at a non-default backend, set:
 

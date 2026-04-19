@@ -8,6 +8,10 @@ dist/
 .next/
 out/
 
+# test and deployment artifacts
+coverage/
+.vercel/
+
 # environment variables
 .env*
 
@@ -34,3 +38,5 @@ datahacksplan.json
 # tool state
 .codex
 .omc/
+.omx/
+.claude/
