@@ -75,6 +75,12 @@ export interface SampleMarker {
   microplasticEstimate: number;
   confidence: number;
   deviceId: string;
+  velocity?: {
+    u: number;
+    v: number;
+    speed: number;
+    direction: number;
+  };
 }
 
 export interface AuditLog {

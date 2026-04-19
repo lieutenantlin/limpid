@@ -20,6 +20,21 @@ const updateBody = z.object({
 });
 
 export async function sampleRoutes(app: FastifyInstance) {
+  app.get('/samples/map', { preHandler: authenticate }, async (_request, reply) => {
+    const result = await sampleService.listSamples({ limit: 100 });
+    const items = result.data.map((sample) => ({
+      id: sample.id,
+      sampleId: sample.sampleId,
+      lat: sample.latitude,
+      lng: sample.longitude,
+      capturedAt: sample.capturedAt.toISOString(),
+      microplasticEstimate: sample.microplasticEstimate,
+      confidence: sample.confidence,
+      deviceId: sample.device?.deviceId ?? sample.deviceId,
+    }));
+    return reply.send({ items });
+  });
+
   app.get('/samples', { preHandler: authenticate }, async (request, reply) => {
     const query = listQuery.safeParse(request.query);
     if (!query.success) return reply.status(400).send({ error: 'Validation failed', details: query.error.flatten() });

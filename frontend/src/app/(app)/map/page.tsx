@@ -9,38 +9,60 @@ import { SampleMap } from "@/components/map/sample-map";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { LoadingPanel } from "@/components/ui/loading-panel";
-import { getSampleMarkers } from "@/lib/api";
+import { getSampleMarkers, getVelocityForPoints } from "@/lib/api";
 import { formatDateTime, formatNumber, formatPercent } from "@/lib/format";
 
 export default function MapPage() {
-  const [filters, setFilters] = useState({
+  const emptyFilters = {
     deviceId: "",
     from: "",
     to: "",
     minConfidence: "",
     minEstimate: "",
     maxEstimate: "",
-  });
+  };
+
+  const [inputFilters, setInputFilters] = useState(emptyFilters);
+  const [appliedFilters, setAppliedFilters] = useState(emptyFilters);
 
   const markersQuery = useQuery({
-    queryKey: ["map", filters],
-    queryFn: () => getSampleMarkers(filters),
+    queryKey: ["map", "markers", appliedFilters],
+    queryFn: () => getSampleMarkers(appliedFilters),
   });
 
+  const velocityQuery = useQuery({
+    queryKey: ["map", "velocity", markersQuery.data?.map(m => m.id) ?? []],
+    queryFn: () => getVelocityForPoints(
+      (markersQuery.data ?? []).map(m => ({ lat: m.lat, lng: m.lng }))
+    ),
+    enabled: (markersQuery.data?.length ?? 0) > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const markersWithVelocity = useMemo(() => {
+    if (!markersQuery.data) return [];
+    if (!velocityQuery.data) return markersQuery.data;
+    return markersQuery.data.map((marker, i) => ({
+      ...marker,
+      velocity: velocityQuery.data[i] ?? undefined,
+    }));
+  }, [markersQuery.data, velocityQuery.data]);
+
   const filteredMarkers = useMemo(() => {
-    return (markersQuery.data ?? []).filter((marker) => {
-      const minConfidence = filters.minConfidence ? Number(filters.minConfidence) : undefined;
-      const minEstimate = filters.minEstimate ? Number(filters.minEstimate) : undefined;
-      const maxEstimate = filters.maxEstimate ? Number(filters.maxEstimate) : undefined;
+    return markersWithVelocity.filter((marker) => {
+      const minConfidence = appliedFilters.minConfidence ? Number(appliedFilters.minConfidence) : undefined;
+      const minEstimate = appliedFilters.minEstimate ? Number(appliedFilters.minEstimate) : undefined;
+      const maxEstimate = appliedFilters.maxEstimate ? Number(appliedFilters.maxEstimate) : undefined;
 
       if (minConfidence !== undefined && marker.confidence < minConfidence) return false;
       if (minEstimate !== undefined && marker.microplasticEstimate < minEstimate) return false;
       if (maxEstimate !== undefined && marker.microplasticEstimate > maxEstimate) return false;
       return true;
     });
-  }, [filters.maxEstimate, filters.minConfidence, filters.minEstimate, markersQuery.data]);
+  }, [appliedFilters.maxEstimate, appliedFilters.minConfidence, appliedFilters.minEstimate, markersWithVelocity]);
 
   if (markersQuery.isLoading) return <LoadingPanel label="Loading map markers..." />;
   if (markersQuery.isError) {
@@ -63,40 +85,43 @@ export default function MapPage() {
         <CardContent className="space-y-3">
           <Input
             placeholder="Device ID"
-            value={filters.deviceId}
-            onChange={(event) => setFilters((current) => ({ ...current, deviceId: event.target.value }))}
+            value={inputFilters.deviceId}
+            onChange={(event) => setInputFilters((current) => ({ ...current, deviceId: event.target.value }))}
           />
           <Input
             type="date"
-            value={filters.from}
-            onChange={(event) => setFilters((current) => ({ ...current, from: event.target.value }))}
+            value={inputFilters.from}
+            onChange={(event) => setInputFilters((current) => ({ ...current, from: event.target.value }))}
           />
           <Input
             type="date"
-            value={filters.to}
-            onChange={(event) => setFilters((current) => ({ ...current, to: event.target.value }))}
+            value={inputFilters.to}
+            onChange={(event) => setInputFilters((current) => ({ ...current, to: event.target.value }))}
           />
           <Input
             type="number"
             step="0.01"
             placeholder="Minimum confidence (0-1)"
-            value={filters.minConfidence}
-            onChange={(event) => setFilters((current) => ({ ...current, minConfidence: event.target.value }))}
+            value={inputFilters.minConfidence}
+            onChange={(event) => setInputFilters((current) => ({ ...current, minConfidence: event.target.value }))}
           />
           <Input
             type="number"
             step="0.01"
             placeholder="Minimum estimate"
-            value={filters.minEstimate}
-            onChange={(event) => setFilters((current) => ({ ...current, minEstimate: event.target.value }))}
+            value={inputFilters.minEstimate}
+            onChange={(event) => setInputFilters((current) => ({ ...current, minEstimate: event.target.value }))}
           />
           <Input
             type="number"
             step="0.01"
             placeholder="Maximum estimate"
-            value={filters.maxEstimate}
-            onChange={(event) => setFilters((current) => ({ ...current, maxEstimate: event.target.value }))}
+            value={inputFilters.maxEstimate}
+            onChange={(event) => setInputFilters((current) => ({ ...current, maxEstimate: event.target.value }))}
           />
+          <Button className="w-full" onClick={() => setAppliedFilters(inputFilters)}>
+            Apply filters
+          </Button>
           <div className="rounded-[1.5rem] border border-border/60 bg-background/55 p-4">
             <p className="text-sm font-medium">{filteredMarkers.length} visible markers</p>
             <p className="mt-2 text-sm text-muted-foreground">

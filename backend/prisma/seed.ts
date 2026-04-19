@@ -56,11 +56,21 @@ async function main() {
   });
 
   const sampleData = [
-    { lat: 32.68, lng: -117.18, estimate: 12.4, confidence: 0.87 },
-    { lat: 32.69, lng: -117.19, estimate: 8.1,  confidence: 0.91 },
-    { lat: 32.70, lng: -117.17, estimate: 15.6, confidence: 0.78 },
-    { lat: 32.67, lng: -117.20, estimate: 5.3,  confidence: 0.94 },
-    { lat: 32.71, lng: -117.16, estimate: 22.1, confidence: 0.82 },
+    { lat: 33.40, lng: -118.00, estimate: 12.4, confidence: 0.87 },
+    { lat: 33.45, lng: -117.90, estimate: 8.1,  confidence: 0.91 },
+    { lat: 33.38, lng: -118.05, estimate: 15.6, confidence: 0.78 },
+    { lat: 33.42, lng: -117.95, estimate: 5.3,  confidence: 0.94 },
+    { lat: 33.35, lng: -118.10, estimate: 22.1, confidence: 0.82 },
+    { lat: 33.50, lng: -117.85, estimate: 18.7, confidence: 0.89 },
+    { lat: 33.48, lng: -117.92, estimate: 9.4,  confidence: 0.92 },
+    { lat: 33.44, lng: -118.02, estimate: 11.2, confidence: 0.85 },
+    { lat: 33.37, lng: -118.08, estimate: 14.8, confidence: 0.79 },
+    { lat: 33.52, lng: -117.88, estimate: 7.6,  confidence: 0.94 },
+    { lat: 33.46, lng: -117.98, estimate: 19.3, confidence: 0.81 },
+    { lat: 33.41, lng: -118.06, estimate: 10.5, confidence: 0.88 },
+    { lat: 33.39, lng: -118.03, estimate: 13.7, confidence: 0.86 },
+    { lat: 33.49, lng: -117.91, estimate: 16.2, confidence: 0.83 },
+    { lat: 33.43, lng: -117.99, estimate: 8.9,  confidence: 0.90 },
   ];
 
   for (let i = 0; i < sampleData.length; i++) {

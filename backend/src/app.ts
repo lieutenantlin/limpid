@@ -8,6 +8,7 @@ import { sampleRoutes } from './routes/samples.js';
 import { deviceRoutes } from './routes/devices.js';
 import { statsRoutes } from './routes/stats.js';
 import { adminRoutes } from './routes/admin.js';
+import { velocityRoutes } from './routes/velocity.js';
 
 export async function buildApp() {
   const app = Fastify({
@@ -26,6 +27,7 @@ export async function buildApp() {
   await app.register(deviceRoutes);
   await app.register(statsRoutes);
   await app.register(adminRoutes);
+  await app.register(velocityRoutes);
 
   app.setErrorHandler((error, _request, reply) => {
     app.log.error(error);

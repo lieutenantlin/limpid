@@ -8,12 +8,12 @@ dist/
 .next/
 out/
 
-# test and deployment artifacts
+# test and coverage
 coverage/
-.vercel/
 
 # environment variables
 .env*
+!.env.example
 
 # logs
 *.log
@@ -28,21 +28,16 @@ uploads/
 *.tsbuildinfo
 next-env.d.ts
 
-# project docs (not for source control)
-CLAUDE.md
-frontend_spec.md
-backend_spec.md
-datahacksplan.md
-datahacksplan.json
-AWS_MIGRATION_GUIDE.md
-aws_migration_rundown_tailored.md
-
-# AWS SAM build artifacts
+# AWS SAM
 .aws-sam/
 samconfig.toml
+!.env.example
 
-# tool state
-.codex
+# Vercel
+.vercel/
+
+# Tool state (OMC, Codex, Sisyphus)
+.codex/
 .omc/
 .omx/
 .claude/

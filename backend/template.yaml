@@ -183,6 +183,12 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /uploads/presign
             Method: POST
+        IngestSample:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /ingest/sample
+            Method: POST
         Samples:
           Type: HttpApi
           Properties:

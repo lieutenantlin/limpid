@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { spawn } from 'node:child_process';
 import { z } from 'zod';
 import { getStorage } from '../../storage/index.js';
 import { requireAuth, requireRole } from '../auth.js';
@@ -25,6 +26,7 @@ import {
   listAllSamples,
   listSamples,
   updateSample,
+  upsertIngestedSample,
 } from '../sampleRepository.js';
 import { ensureUserProfile, getUserProfilesByIds, listUserProfiles, updateUserRole } from '../userProfileRepository.js';
 
@@ -71,6 +73,21 @@ const timeseriesQuery = z.object({
 
 const presignBody = z.object({
   fileName: z.string().min(1),
+});
+
+const ingestSampleBody = z.object({
+  sampleId: z.string().uuid(),
+  deviceId: z.string().min(1),
+  capturedAt: z.string().datetime(),
+  location: z.object({ lat: z.number(), lng: z.number() }),
+  microplasticEstimate: z.number(),
+  unit: z.string(),
+  confidence: z.number().min(0).max(1),
+  modelVersion: z.string(),
+  qualityScore: z.number().min(0).max(1).optional(),
+  notes: z.string().optional(),
+  imageObjectKey: z.string().optional(),
+  thumbnailObjectKey: z.string().optional(),
 });
 
 function errorStatus(error: unknown): number {
@@ -294,6 +311,17 @@ export async function handler(event: ApiGatewayEvent): Promise<ApiGatewayResult>
       return json(200, { uploadUrl, objectKey });
     }
 
+    if (method === 'POST' && path === '/ingest/sample') {
+      const identity = requireAuth(event);
+      const body = validatedBody(ingestSampleBody, event);
+      const sample = await upsertIngestedSample(body, identity.id);
+      await logAuditEvent(identity.id, 'sample.ingest', 'sample', sample.id, {
+        deviceId: body.deviceId,
+        via: 'rest',
+      });
+      return json(201, { sample: { id: sample.id, sampleId: sample.sampleId, receivedAt: sample.receivedAt } });
+    }
+
     if (method === 'GET' && path === '/samples') {
       requireAuth(event);
       return listSamplesResponse(event);
@@ -319,6 +347,64 @@ export async function handler(event: ApiGatewayEvent): Promise<ApiGatewayResult>
       const query = validatedQuery(listDevicesQuery, event);
       const devices = await listDevices(query.status);
       return json(200, { devices });
+    }
+
+    if (method === 'GET' && path === '/velocity') {
+      const params = event.queryStringParameters ?? {};
+      const lat = params.lat;
+      const lon = params.lon;
+
+      if (!lat || !lon) {
+        return json(400, { error: 'lat and lon are required query parameters' });
+      }
+
+      const latNum = parseFloat(lat);
+      const lonNum = parseFloat(lon);
+
+      if (isNaN(latNum) || isNaN(lonNum)) {
+        return json(400, { error: 'lat and lon must be valid numbers' });
+      }
+
+      return new Promise((resolve) => {
+        const cwd = process.cwd();
+        const isLocal = !cwd.includes('/dist');
+        const scriptPath = isLocal
+          ? `${cwd}/backend/scripts/velocity_lookup.py`
+          : `${cwd}/scripts/velocity_lookup.py`;
+
+        const proc = spawn('python', [scriptPath, '--lat', lat, '--lon', lon], {
+          cwd: isLocal ? cwd : `${cwd}/backend`,
+        });
+
+        let stdout = '';
+        let stderr = '';
+
+        proc.stdout.on('data', (data) => { stdout += data.toString(); });
+        proc.stderr.on('data', (data) => { stderr += data.toString(); });
+
+        proc.on('close', (code) => {
+          if (code !== 0) {
+            resolve(json(500, { error: 'Velocity lookup failed', details: stderr }));
+            return;
+          }
+
+          const uMatch = stdout.match(/Eastern velocity \(u\):\s*([-\d.]+)/);
+          const vMatch = stdout.match(/Northern velocity \(v\):\s*([-\d.]+)/);
+          const speedMatch = stdout.match(/Speed:\s*([-\d.]+)/);
+          const directionMatch = stdout.match(/Direction:\s*([-\d.]+)/);
+
+          resolve(json(200, {
+            u: uMatch ? parseFloat(uMatch[1]) : null,
+            v: vMatch ? parseFloat(vMatch[1]) : null,
+            speed: speedMatch ? parseFloat(speedMatch[1]) : null,
+            direction: directionMatch ? parseFloat(directionMatch[1]) : null,
+          }));
+        });
+
+        proc.on('error', (err) => {
+          resolve(json(500, { error: 'Failed to run velocity lookup' }));
+        });
+      });
     }
 
     if (method === 'GET' && path === '/stats/overview') {

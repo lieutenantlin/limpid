@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Cpu, Droplets, ScanSearch } from "lucide-react";
 import {
@@ -18,13 +19,41 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingPanel } from "@/components/ui/loading-panel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSampleStats } from "@/lib/api";
+import { getSampleStats, getVelocityForPoints, getSampleMarkers } from "@/lib/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatDateTime, formatNumber, formatPercent, formatShortDate } from "@/lib/format";
 
 export default function DashboardPage() {
+  const [selectedLocation, setSelectedLocation] = useState<string>("");
+
   const statsQuery = useQuery({
     queryKey: ["dashboard", "stats"],
     queryFn: getSampleStats,
+  });
+
+  const markersQuery = useQuery({
+    queryKey: ["dashboard", "markers"],
+    queryFn: () => getSampleMarkers({}),
+  });
+
+  const selectedLat = selectedLocation 
+    ? markersQuery.data?.find(m => m.id === selectedLocation)?.lat ?? 33.4
+    : markersQuery.data?.[0]?.lat ?? 33.4;
+
+  const selectedLng = selectedLocation
+    ? markersQuery.data?.find(m => m.id === selectedLocation)?.lng ?? -118.0
+    : markersQuery.data?.[0]?.lng ?? -118.0;
+
+  const velocityQuery = useQuery({
+    queryKey: ["dashboard", "velocity", selectedLat, selectedLng],
+    queryFn: () => getVelocityForPoints([{ lat: selectedLat, lng: selectedLng }]),
+    enabled: !!markersQuery.data?.length,
   });
 
   if (statsQuery.isLoading) return <LoadingPanel label="Building your research overview..." />;
@@ -67,6 +96,69 @@ export default function DashboardPage() {
           value={formatNumber(stats.activeDevices, 0)}
           detail="Devices currently marked active in the backend device registry."
         />
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+<Card className="surface rounded-[2rem] border-0 transition-all duration-200 hover:scale-[1.01] hover:shadow-lg">
+          <CardHeader>
+            <p className="eyebrow">Ocean Current</p>
+            <Select value={selectedLocation} onValueChange={(value) => setSelectedLocation(value || "")}>
+              <SelectTrigger className="mt-2 w-full">
+                <SelectValue placeholder="Select a sample location" />
+              </SelectTrigger>
+              <SelectContent>
+                {markersQuery.data?.map((marker) => (
+                  <SelectItem key={marker.id} value={marker.id}>
+                    {marker.lat.toFixed(2)}°N, {marker.lng.toFixed(2)}°W ({marker.sampleId})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
+            {(markersQuery.isLoading || velocityQuery.isLoading) ? (
+              <LoadingPanel label="Fetching current data..." />
+            ) : velocityQuery.data?.[0] ? (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Speed</p>
+                  <p className="text-3xl font-bold">
+                    {(velocityQuery.data[0].speed * 100).toFixed(1)}
+                    <span className="text-lg font-normal text-muted-foreground ml-1">
+                      cm/s
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Direction</p>
+                  <p className="text-3xl font-bold">
+                    {velocityQuery.data[0].direction.toFixed(0)}
+                    <span className="text-lg font-normal text-muted-foreground ml-1">
+                     °
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Flow</p>
+                  <div className="w-24 h-24 border-2 border-border rounded-full flex items-center justify-center">
+                    <svg
+                      width="80"
+                      height="80"
+                      viewBox="0 0 80 80"
+                      className="text-primary"
+                      style={{ transform: `rotate(${90 - velocityQuery.data[0].direction}deg)` }}
+                    >
+                      <line x1="40" y1="40" x2="40" y2="12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                      <polygon points="34,18 40,8 46,18" fill="currentColor" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No velocity data available</p>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">

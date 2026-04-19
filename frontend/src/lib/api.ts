@@ -177,17 +177,19 @@ export async function getSampleStats() {
   }
 }
 
-export async function getSampleMarkers(filters: Record<string, string | number | undefined>) {
+export async function getSampleMarkers(filters: Record<string, string | number | undefined>, includeVelocity = false) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
     if (value !== undefined && value !== "") search.set(key, String(value));
   }
 
+  let markers: SampleMarker[];
+
   try {
     const response = await request<{ items: SampleMarker[] }>(
       `/samples/map${search.size > 0 ? `?${search.toString()}` : ""}`,
     );
-    return response.items;
+    markers = response.items;
   } catch {
     const fallback = await getSamples({
       deviceId: filters.deviceId,
@@ -195,8 +197,20 @@ export async function getSampleMarkers(filters: Record<string, string | number |
       to: filters.to,
       limit: 100,
     });
-    return fallback.data.map(toMarker);
+    markers = fallback.data.map(toMarker);
   }
+
+  if (includeVelocity && markers.length > 0) {
+    const velocityData = await getVelocityForPoints(
+      markers.map(m => ({ lat: m.lat, lng: m.lng }))
+    );
+    markers = markers.map((marker, i) => ({
+      ...marker,
+      velocity: velocityData[i] ?? undefined,
+    }));
+  }
+
+  return markers;
 }
 
 export async function getDevices() {
@@ -257,6 +271,32 @@ export async function updateUserRole(id: string, role: UserRole) {
     body: JSON.stringify({ role }),
   });
   return response.user;
+}
+
+export async function getVelocityForPoints(
+  points: Array<{ lat: number; lng: number }>
+): Promise<Array<{ u: number; v: number; speed: number; direction: number } | null>> {
+  if (points.length === 0) return [];
+
+  const results: Array<{ u: number; v: number; speed: number; direction: number } | null> = [];
+  
+  const batchSize = 10;
+  for (let i = 0; i < points.length; i += batchSize) {
+    const batch = points.slice(i, i + batchSize);
+    const promises = batch.map(async (point) => {
+      try {
+        return await request<{ u: number; v: number; speed: number; direction: number }>(
+          `/velocity?lat=${point.lat}&lon=${point.lng}`
+        );
+      } catch {
+        return null;
+      }
+    });
+    const batchResults = await Promise.all(promises);
+    results.push(...batchResults);
+  }
+
+  return results;
 }
 
 export { ApiError };
