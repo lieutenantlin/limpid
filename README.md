@@ -1,5 +1,7 @@
 # limpid
 
+[Limpid Mobile App](https://github.com/lieutenantlin/limpid-mobile)
+
 Microplastics monitoring platform built for DataHacks 2026.
 
 This repository now supports two backend/runtime shapes:
