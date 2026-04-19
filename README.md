@@ -1,17 +1,17 @@
-# lobotomite-frontal-27
+# limpid
 
 Microplastics monitoring platform built for DataHacks 2026. The repository contains:
 
 - `backend/`: a Fastify API backed by PostgreSQL via Prisma
 - `frontend/`: a Next.js app with a public landing page plus authenticated researcher/admin dashboards
 
-The product theme in the codebase is "Aqua Graph": devices ingest sample measurements, the API stores them, and the frontend visualizes them in dashboards, tables, and a map.
+The product in the codebase is "limpid": devices ingest sample measurements, the API stores them, and the frontend visualizes them in dashboards, tables, and a map.
 
 ## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                           Aqua Graph Platform                           │
+│                             limpid Platform                             │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌─────────────┐    ┌──────────────┐    ┌─────────────────────────┐     │
@@ -198,7 +198,7 @@ Visit `http://localhost:3000/` for the public landing page, `http://localhost:30
 
 ## Docker workflow
 
-The provided [`docker-compose.yml`](/home/mori/Dev/datahacks-2026/lobotomite-frontal-27/docker-compose.yml) now starts:
+The provided [`docker-compose.yml`](docker-compose.yml) now starts:
 
 - `db`: Postgres 16 with a persistent named volume
 - `api`: the Fastify backend on `http://localhost:3001`

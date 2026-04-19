@@ -1,6 +1,6 @@
-# Backend
+# limpid Backend
 
-Fastify + Prisma API for the Aqua Graph microplastics monitoring platform.
+Fastify + Prisma API for the limpid microplastics monitoring platform.
 
 ## Technology Stack
 
@@ -78,7 +78,7 @@ npm run test:watch  # run Vitest in watch mode
 
 ## Environment variables
 
-Copy [`.env.example`](/home/mori/Dev/datahacks-2026/lobotomite-frontal-27/backend/.env.example) to `.env`.
+Copy [`.env.example`](.env.example) to `.env`.
 
 | Variable | Purpose | Default |
 | --- | --- | --- |
@@ -223,7 +223,7 @@ Current route policy, at a high level:
 
 ## Storage
 
-Storage is selected in [`src/storage/index.ts`](/home/mori/Dev/datahacks-2026/lobotomite-frontal-27/backend/src/storage/index.ts):
+Storage is selected in [`src/storage/index.ts`](src/storage/index.ts):
 
 - `localStorageProvider.ts`: writes files under `LOCAL_STORAGE_PATH`
 - `s3StorageProvider.ts`: uses AWS SDK v3 to create signed download URLs
@@ -232,7 +232,7 @@ Sample records store `imageObjectKey` and `thumbnailObjectKey`; signed URLs are 
 
 ## Testing
 
-Tests live under [`src/tests/`](/home/mori/Dev/datahacks-2026/lobotomite-frontal-27/backend/src/tests).
+Tests live under [`src/tests/`](src/tests/).
 
 Current coverage is route-focused and mostly uses mocked Prisma dependencies:
 

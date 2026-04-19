@@ -1,6 +1,6 @@
-# Frontend
+# limpid Frontend
 
-Next.js dashboard for the Aqua Graph microplastics monitoring platform.
+Next.js dashboard for the limpid microplastics monitoring platform.
 
 ## Technology Stack
 
@@ -99,10 +99,10 @@ The login flow is:
 
 ## Styling and UI
 
-Styling is centered around [`src/app/globals.css`](/home/mori/Dev/datahacks-2026/lobotomite-frontal-27/frontend/src/app/globals.css):
+Styling is centered around [`src/app/globals.css`](src/app/globals.css):
 
 - Tailwind CSS 4 with CSS variables and custom tokens
-- a custom Aqua Graph visual theme using OKLCH color tokens
+- a custom limpid visual theme using OKLCH color tokens
 - shadcn's generated utility and primitive component setup
 - glassy panel surfaces through the shared `.surface` utility
 
