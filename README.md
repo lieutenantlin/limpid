@@ -17,9 +17,9 @@ The product theme in the codebase is "Aqua Graph": devices ingest sample measure
 │  ┌─────────────┐    ┌──────────────┐    ┌─────────────────────────┐     │
 │  │   iPhone    │    │  Arduino UNO │    │      Backend API        │     │
 │  │   (Camera)  │───▶│  (Edge AI)   │───▶│   (Fastify + Prisma)    │     │
-│  └─────────────┘    └──────────────┘    └───────────┬─────────────┘     │
-│                                                       │                 │
-│                                                       ▼                 │
+│  └─────────────┘    └──────────────┘    └───────────────┬─────────┘     │
+│                                                         │               │
+│                                                         ▼               │
 │                                              ┌─────────────────────┐    │
 │                                              │   PostgreSQL DB     │    │
 │                                              │   (Prisma ORM)      │    │
