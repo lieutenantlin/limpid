@@ -69,6 +69,9 @@ Standardize hover border to `hover:border-primary/50 transition-colors duration-
 transition-transform hover:scale-110 duration-200
 ```
 
+### Navbar Elements
+Make sure underlining UI element is consistent for all navbar elements
+
 ---
 
 ## Constraints

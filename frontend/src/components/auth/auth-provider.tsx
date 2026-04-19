@@ -9,7 +9,13 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getCurrentUser, login as loginRequest } from "@/lib/api";
-import { clearStoredToken, getStoredToken, setStoredToken } from "@/lib/auth";
+import {
+  clearStoredToken,
+  getConfiguredAuthMode,
+  getStoredToken,
+  logoutFromHostedAuth,
+  setStoredToken,
+} from "@/lib/auth";
 import type { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -41,6 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: userQuery.data ?? null,
       isLoading: sessionToken === null ? false : userQuery.isLoading,
       async login(email, password) {
+        if (getConfiguredAuthMode() === "cognito") {
+          throw new Error("Use Cognito hosted sign-in for this environment.");
+        }
         const result = await loginRequest(email, password);
         setStoredToken(result.token);
         setToken(result.token);
@@ -50,6 +59,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearStoredToken();
         setToken(null);
         queryClient.removeQueries({ queryKey: ["auth"] });
+        if (getConfiguredAuthMode() === "cognito") {
+          logoutFromHostedAuth();
+        }
       },
     }),
     [queryClient, sessionToken, userQuery.data, userQuery.isLoading],
