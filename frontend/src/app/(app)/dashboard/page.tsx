@@ -19,7 +19,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingPanel } from "@/components/ui/loading-panel";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSampleStats, getVelocityForPoints, getSampleMarkers } from "@/lib/api";
+import { getSampleStats, getVelocityForPoints, getSampleMarkers, getConcentrationForPoints } from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -53,6 +53,12 @@ export default function DashboardPage() {
   const velocityQuery = useQuery({
     queryKey: ["dashboard", "velocity", selectedLat, selectedLng],
     queryFn: () => getVelocityForPoints([{ lat: selectedLat, lng: selectedLng }]),
+    enabled: !!markersQuery.data?.length,
+  });
+
+  const concentrationQuery = useQuery({
+    queryKey: ["dashboard", "concentration", selectedLat, selectedLng],
+    queryFn: () => getConcentrationForPoints([{ lat: selectedLat, lng: selectedLng }]),
     enabled: !!markersQuery.data?.length,
   });
 
@@ -116,46 +122,61 @@ export default function DashboardPage() {
             </Select>
           </CardHeader>
           <CardContent>
-            {(markersQuery.isLoading || velocityQuery.isLoading) ? (
+            {(markersQuery.isLoading || velocityQuery.isLoading || concentrationQuery.isLoading) ? (
               <LoadingPanel label="Fetching current data..." />
-            ) : velocityQuery.data?.[0] ? (
+            ) : velocityQuery.data?.[0] || concentrationQuery.data?.[0] ? (
               <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Speed</p>
-                  <p className="text-3xl font-bold">
-                    {(velocityQuery.data[0].speed * 100).toFixed(1)}
-                    <span className="text-lg font-normal text-muted-foreground ml-1">
-                      cm/s
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Direction</p>
-                  <p className="text-3xl font-bold">
-                    {velocityQuery.data[0].direction.toFixed(0)}
-                    <span className="text-lg font-normal text-muted-foreground ml-1">
-                     °
-                    </span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Flow</p>
-                  <div className="w-24 h-24 border-2 border-border rounded-full flex items-center justify-center">
-                    <svg
-                      width="80"
-                      height="80"
-                      viewBox="0 0 80 80"
-                      className="text-primary"
-                      style={{ transform: `rotate(${90 - velocityQuery.data[0].direction}deg)` }}
-                    >
-                      <line x1="40" y1="40" x2="40" y2="12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                      <polygon points="34,18 40,8 46,18" fill="currentColor" />
-                    </svg>
+                {concentrationQuery.data?.[0] && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Concentration</p>
+                    <p className="text-3xl font-bold">
+                      {concentrationQuery.data[0].concentrationClass}
+                    </p>
+                    <p className="text-lg font-normal text-muted-foreground">
+                      {concentrationQuery.data[0].measurement.toFixed(5)} pieces/m³
+                    </p>
                   </div>
-                </div>
+                )}
+                {velocityQuery.data?.[0] && (
+                  <>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Speed</p>
+                      <p className="text-3xl font-bold">
+                        {(velocityQuery.data[0].speed * 100).toFixed(1)}
+                        <span className="text-lg font-normal text-muted-foreground ml-1">
+                          cm/s
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Direction</p>
+                      <p className="text-3xl font-bold">
+                        {velocityQuery.data[0].direction.toFixed(0)}
+                        <span className="text-lg font-normal text-muted-foreground ml-1">
+                         °
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Flow</p>
+                      <div className="w-24 h-24 border-2 border-border rounded-full flex items-center justify-center">
+                        <svg
+                          width="80"
+                          height="80"
+                          viewBox="0 0 80 80"
+                          className="text-primary"
+                          style={{ transform: `rotate(${90 - velocityQuery.data[0].direction}deg)` }}
+                        >
+                          <line x1="40" y1="40" x2="40" y2="12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                          <polygon points="34,18 40,8 46,18" fill="currentColor" />
+                        </svg>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
-              <p className="text-muted-foreground">No velocity data available</p>
+              <p className="text-muted-foreground">No velocity or concentration data available</p>
             )}
           </CardContent>
         </Card>

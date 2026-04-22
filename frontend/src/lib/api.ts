@@ -299,4 +299,30 @@ export async function getVelocityForPoints(
   return results;
 }
 
+export async function getConcentrationForPoints(
+  points: Array<{ lat: number; lng: number }>
+): Promise<Array<{ concentrationClass: string; measurement: number } | null>> {
+  if (points.length === 0) return [];
+
+  const results: Array<{ concentrationClass: string; measurement: number } | null> = [];
+
+  const batchSize = 10;
+  for (let i = 0; i < points.length; i += batchSize) {
+    const batch = points.slice(i, i + batchSize);
+    const promises = batch.map(async (point) => {
+      try {
+        return await request<{ concentrationClass: string; measurement: number }>(
+          `/concentration?lat=${point.lat}&lon=${point.lng}`
+        );
+      } catch {
+        return null;
+      }
+    });
+    const batchResults = await Promise.all(promises);
+    results.push(...batchResults);
+  }
+
+  return results;
+}
+
 export { ApiError };

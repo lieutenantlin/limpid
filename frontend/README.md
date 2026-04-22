@@ -122,6 +122,8 @@ Current AWS-aligned endpoints used by the frontend include:
 - `GET /admin/audit-log`
 - `GET /admin/overview`
 - `POST /uploads/presign`
+- `GET /velocity` - Ocean current velocity data
+- `GET /concentration` - Marine microplastics concentration
 
 Fallback behavior still exists for a few routes:
 
