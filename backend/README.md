@@ -244,6 +244,8 @@ Local mode exposes:
 - `GET /devices`
 - `GET /stats/*`
 - `GET /admin/*`
+- `GET /velocity` - Ocean current velocity from CUGN dataset
+- `GET /concentration` - Marine microplastics concentration from NOAA dataset
 
 ### AWS Lambda/API routes
 
@@ -275,6 +277,39 @@ Important AWS auth behavior:
 
 - `/auth/login` and `/auth/register` intentionally return `501` in AWS mode.
 - The real login path in AWS mode is Cognito Hosted UI + PKCE from the frontend.
+
+## NOAA Marine Microplastics Integration
+
+The backend includes integration with NOAA's Marine Microplastics dataset for displaying environmental concentration data in the dashboard.
+
+### Concentration Endpoint
+
+`GET /concentration?lat=X&lon=Y`
+
+Returns the microplastics concentration from the nearest NOAA data point:
+
+```json
+{
+  "concentrationClass": "Medium",
+  "measurement": 0.01728
+}
+```
+
+- `concentrationClass`: Classification (Very Low, Low, Medium, High)
+- `measurement`: Concentration in pieces/m³
+
+### Data Source
+
+- Dataset: NOAA Marine Microplastics (NCEI Accession 211008)
+- Location: [`data/Marine_Microplastics.csv`](./data/Marine_Microplastics.csv)
+- Lookup script: [`scripts/microplastics_lookup.py`](./scripts/microplastics_lookup.py)
+
+### Coordinate Range
+
+- Latitude: -59.61 to 66.22 degrees
+- Longitude: -180.0 to 180.0 degrees
+
+Out-of-range coordinates return a 400 error.
 
 ## Storage
 
