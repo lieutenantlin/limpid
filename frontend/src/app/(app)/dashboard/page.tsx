@@ -129,7 +129,13 @@ export default function DashboardPage() {
                 {concentrationQuery.data?.[0] && (
                   <div>
                     <p className="text-sm text-muted-foreground">Concentration</p>
-                    <p className="text-3xl font-bold">
+                    <p className={`text-3xl font-bold ${
+                      concentrationQuery.data[0].concentrationClass === 'Very Low' ? 'text-green-500' :
+                      concentrationQuery.data[0].concentrationClass === 'Low' ? 'text-green-500' :
+                      concentrationQuery.data[0].concentrationClass === 'Medium' ? 'text-yellow-500' :
+                      concentrationQuery.data[0].concentrationClass === 'High' ? 'text-red-500' :
+                      ''
+                    }`}>
                       {concentrationQuery.data[0].concentrationClass}
                     </p>
                     <p className="text-lg font-normal text-muted-foreground">
